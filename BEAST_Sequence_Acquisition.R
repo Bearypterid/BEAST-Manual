@@ -1,12 +1,11 @@
 setwd("~/RProject")
-packages=c('dplyr','biomaRt','BiocManager','plyr','ggplot2')
+packages=c('dplyr','biomaRt','BiocManager','plyr')
 install.packages(setdiff(packages, rownames(installed.packages())))
 library ("biomaRt")
 library("BiocManager")
 library("plyr")
 library("dplyr")
-library("ggplot2")
-ens=useMart("ensembl") #Using code from Rbasics file
+ens=useMart("ensembl")
 listDatasets(ens)
 datasets=listDatasets(ens)
 opossum=useDataset("mdomestica_gene_ensembl",mart=ens)
@@ -20,9 +19,9 @@ koala=useDataset("pcinereus_gene_ensembl",mart=ens)
 tasdevil=useDataset("sharrisii_gene_ensembl",mart=ens)
 wombat=useDataset("vursinus_gene_ensembl",mart=ens)
 elephant=useDataset("lafricana_gene_ensembl",mart=ens)
-OGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=opossum)
-filtervalue="PAOX"
-OGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name","entrezgene_id","entrezgene_accession","entrezgene_description"),mart=opossum,filters = "external_gene_name", values = filtervalue)
+OGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=opossum)#Use to find Genes
+filtervalue="PAOX"#Gene of interest
+OGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=opossum,filters = "external_gene_name", values = filtervalue)
 WGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=wallaby,filters = "external_gene_name", values = filtervalue)
 PGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=platypus,filters = "external_gene_name", values = filtervalue)
 HGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=hyrax,filters = "external_gene_name", values = filtervalue)
@@ -64,6 +63,8 @@ Organism="African_bush_elephant_(Loxodonta_africana)"
 eseq[eseq == filtervalue]=paste(id,Organism,filtervalue,"cDNA",sep = ".")
 Fastaseq=rbind.data.frame(oseq,wseq,pseq,hseq,kseq,tdseq,wmseq,eseq)
 exportFASTA(Fastaseq,file = paste(filtervalue,"fasta",sep = "."))
+# Old Test Code
+# OGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name","entrezgene_id","entrezgene_accession","entrezgene_description"),mart=opossum,filters = "external_gene_name", values = filtervalue)
 # exportFASTA(oseq,file = "test.fasta")
 # exportFASTA(oseq,file = paste("Opossum",filtervalue,"fasta",sep = "."))
 # exportFASTA(wseq,file = paste("Wallaby",filtervalue,"fasta",sep = "."))
