@@ -1,96 +1,91 @@
-setwd("~/RProject")
-packages=c('dplyr','biomaRt','BiocManager','plyr')
+message("Create a directory in your home directory for this script to save files to, then change the working directory in the next line")
+
+setwd("~/RProject")#instead of /RProject it should be whatever your folder of interest is called
+packages=c('biomaRt','BiocManager','plyr','dplyr','tibble','tidyselect')
 install.packages(setdiff(packages, rownames(installed.packages())))
-library ("biomaRt")
+install.packages("devtools")
+# devtools::install_version("dbplyr", version = "2.3.4") #This line is needed if the wrong dplyr version is installed and is interferring with biomart
+library("biomaRt")
 library("BiocManager")
 library("plyr")
 library("dplyr")
+library("tibble")
+library("tidyselect")
+message("If biomart did not instal than uncomment and run the next two lines of code")
+# BiocManager::install("biomaRt",force = TRUE)
+# library("biomaRt")
+biomaRt::listMarts()# These 3 lines are available for you to use and browse the other more niche databases
+listEnsembl()
+listEnsemblGenomes()
+
 ens=useMart("ensembl")
-listDatasets(ens)
-datasets=listDatasets(ens)
-opossum=useDataset("mdomestica_gene_ensembl",mart=ens)
-atr=listAttributes(opossum)
-listFilters(opossum)
-wallaby=useDataset("neugenii_gene_ensembl",mart=ens)
-atr2=listAttributes(wallaby)
-platypus=useDataset("oanatinus_gene_ensembl",mart=ens)
-hyrax=useDataset("pcapensis_gene_ensembl",mart=ens)
-koala=useDataset("pcinereus_gene_ensembl",mart=ens)
-tasdevil=useDataset("sharrisii_gene_ensembl",mart=ens)
-wombat=useDataset("vursinus_gene_ensembl",mart=ens)
-elephant=useDataset("lafricana_gene_ensembl",mart=ens)
-OGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=opossum)#Use to find Genes
+anim=useEnsemblGenomes("metazoa_mart")
+singleeuk=useEnsemblGenomes("protists_mart")
+fungi=useEnsemblGenomes("fungi_mart")
+plants=useEnsemblGenomes("plants_mart")
+
+datasetsens=listDatasets(ens)
+datasetsanim=listDatasets(anim)
+datasetsprotist=listDatasets(singleeuk)
+datasetsfungi=listDatasets(fungi)
+datasetsplants=listDatasets(plants)
+
+datasetused=datasetsens
+datsetused=rownames(datasetused)=datasetused[,2]
+message("Browse through yourdataset used to find your organisms of interest. Once you have found your ",
+        "organisms of interest, copy and past the text from the information cell into the list function below. ",
+        "The list function below will be used to search for and collect data on your species of interest, so make sure ",
+        "the names in the list are exactly as written in the database you browsed, otehrwise there will be an error. ",
+        "The first item in the list needs to be the database used, otherwise the script will not run.")
+
+specieslist=list(ens,"Opossum","Wallaby","Platypus","Hyrax","Elephant genes","Koala","Tasmanian","Common wombat")
+
+numberspecieslist=length(specieslist)
+for (i in 1:numberspecieslist) {#This for loop creates the marts needed for the get bm function
+  maht=paste("mart",i,sep = "")
+  # speciesgen=paste("speciesgenes",i,sep = "")
+  if (i==1) {
+    assign(maht,specieslist[[i]])
+  } else{
+    searchspecies=specieslist[[i]]
+    speciesdata=datasetused[c(paste(searchspecies)),]
+    speciesdata=speciesdata[1,1]
+    speciesgenes=useDataset(paste(speciesdata,sep = ""),mart=mart1)
+    assign(maht,speciesgenes)
+  }
+}
+message("Use speciesgenes0 to browse for possible genes of interest")
+
+speciesgenes0=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=mart2)#Use to find Genes
+
+message("This is the gene of interest the rest of the code will use.")
 filtervalue="PAOX"#Gene of interest
-OGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=opossum,filters = "external_gene_name", values = filtervalue)
-WGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=wallaby,filters = "external_gene_name", values = filtervalue)
-PGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=platypus,filters = "external_gene_name", values = filtervalue)
-HGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=hyrax,filters = "external_gene_name", values = filtervalue)
-KGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=koala,filters = "external_gene_name", values = filtervalue)
-TDGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=tasdevil,filters = "external_gene_name", values = filtervalue)
-WomGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=wombat,filters = "external_gene_name", values = filtervalue)
-EGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=elephant,filters = "external_gene_name", values = filtervalue)
-oseq=getSequence(id = filtervalue,type ="external_gene_name",seqType = "cdna",mart = opossum)
-id=OGenes[1,1]
-Organism="gray_short-tailed_opossum_(Monodelphis_domestica)"
-oseq[oseq == filtervalue]=paste(id,Organism,filtervalue,"cDNA",sep = ".")
-wseq=getSequence(id = filtervalue,type ="external_gene_name",seqType = "cdna",mart = wallaby)
-id=WGenes[1,1]
-Organism="tammar_wallaby_(Notamacropus_eugenii)"
-wseq[wseq == filtervalue]=paste(id,Organism,filtervalue,"cDNA",sep = ".")
-pseq=getSequence(id = filtervalue,type ="external_gene_name",seqType = "cdna",mart = platypus)
-id=PGenes[1,1]
-Organism="platypus_(Ornithorhynchus_anatinus)"
-pseq[pseq == filtervalue]=paste(id,Organism,filtervalue,"cDNA",sep = ".")
-hseq=getSequence(id = filtervalue,type ="external_gene_name",seqType = "cdna",mart = hyrax)
-id=HGenes[1,1]
-Organism="rock_hyrax_(P._capensis)"
-hseq[hseq == filtervalue]=paste(id,Organism,filtervalue,"cDNA",sep = ".")
-kseq=getSequence(id = filtervalue,type ="external_gene_name",seqType = "cdna",mart = koala)
-id=KGenes[1,1]
-Organism="koala_(Phascolarctos_cinereus)"
-kseq[kseq == filtervalue]=paste(id,Organism,filtervalue,"cDNA",sep = ".")
-tdseq=getSequence(id = filtervalue,type ="external_gene_name",seqType = "cdna",mart = tasdevil)
-id=TDGenes[1,1]
-Organism="Tasmanian_devil_(Sarcophilus_harrisii)"
-tdseq[tdseq == filtervalue]=paste(id,Organism,filtervalue,"cDNA",sep = ".")
-wmseq=getSequence(id = filtervalue,type ="external_gene_name",seqType = "cdna",mart = wombat)
-id=WomGenes[1,1]
-Organism="common_wombat_(Vombatus_ursinus)"
-wmseq[wmseq == filtervalue]=paste(id,Organism,filtervalue,"cDNA",sep = ".")
-eseq=getSequence(id = filtervalue,type ="external_gene_name",seqType = "cdna",mart = elephant)
-id=EGenes[1,1]
-Organism="African_bush_elephant_(Loxodonta_africana)"
-eseq[eseq == filtervalue]=paste(id,Organism,filtervalue,"cDNA",sep = ".")
-Fastaseq=rbind.data.frame(oseq,wseq,pseq,hseq,kseq,tdseq,wmseq,eseq)
+
+for (i in 2:numberspecieslist) {
+  speciesgen=paste("speciesgenes",i,sep = "")
+  speciesgenepresent=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name"),mart=get(paste("mart",i,sep = "")),filters = "external_gene_name", values = filtervalue)
+  assign(speciesgen,speciesgenepresent)
+  if (is.na(speciesgenepresent[1,1])) {
+    message("The gene you have selected is not present in all species of interest.",
+            " Please select a different gene and try again")
+    {break}
+  }
+}
+message("If your gene of interest was found in all species of interest, proceed.")
+for (i in 2:numberspecieslist) {
+  searchspecies=specieslist[[i]]
+  speciesdata=datasetused[c(paste(searchspecies)),]
+  geneseq=getSequence(id = filtervalue,type ="external_gene_name",seqType = "cdna",mart = get(paste("mart",i,sep = "")))
+  geneid=get(paste("speciesgenes",i,sep = ""))
+  geneid=geneid[1,1]
+  Organism=speciesdata[1,2]
+  geneseq[geneseq == filtervalue]=paste(geneid,Organism,filtervalue,"cDNA",sep = ".")
+  if (i==2) {
+    Fastaseq=geneseq
+  }else{
+  Fastaseq=rbind.data.frame(Fastaseq,geneseq)
+  }
+}
+message("Make sure to delete any duplicate fasta files before the next line is run.",
+        " Otherwise it will simply add your new sequences to the old one including any duplicates")
 exportFASTA(Fastaseq,file = paste(filtervalue,"fasta",sep = "."))
-# Old Test Code
-# OGenes=getBM(attributes=c("ensembl_gene_id","name_1006","external_gene_name","entrezgene_id","entrezgene_accession","entrezgene_description"),mart=opossum,filters = "external_gene_name", values = filtervalue)
-# exportFASTA(oseq,file = "test.fasta")
-# exportFASTA(oseq,file = paste("Opossum",filtervalue,"fasta",sep = "."))
-# exportFASTA(wseq,file = paste("Wallaby",filtervalue,"fasta",sep = "."))
-# exportFASTA(pseq,file = paste("Platypus",filtervalue,"fasta",sep = "."))
-# exportFASTA(hseq,file = paste("Hyrax",filtervalue,"fasta",sep = "."))
-# exportFASTA(kseq,file = paste("Koala",filtervalue,"fasta",sep = "."))
-# exportFASTA(tdseq,file = paste("Tasmanian_Devil",filtervalue,"fasta",sep = "."))
-# exportFASTA(wmseq,file = paste("Common_Wombat",filtervalue,"fasta",sep = "."))
-# exportFASTA(eseq,file = paste("African_Elephant",filtervalue,"fasta",sep = "."))
-# show(oseq)
-# show(wseq)
-# show(pseq)
-# show(hseq)
-# show(kseq)
-# show(tdseq)
-# show(wmseq)
-# show(eseq)
-# Opossum genes (ASM229v1)mdomestica_gene_ensembl
-# Wallaby genes (Meug_1.0)neugenii_gene_ensembl
-# Platypus genes (mOrnAna1.p.v1)oanatinus_gene_ensembl
-# Hyrax genes (proCap1)pcapensis_gene_ensembl
-# Koala genes (phaCin_unsw_v4.1)pcinereus_gene_ensembl
-# Tasmanian devil genes (mSarHar1.11)sharrisii_gene_ensembl
-# Common wombat genes (bare-nosed_wombat_genome_assembly)vursinus_gene_ensembl
-# Elephant genes (Lox8afr3.0)lafricana_gene_ensembl
-# go_id
-# name_1006
-# external_gene_name
-# ensembl_gene_id
